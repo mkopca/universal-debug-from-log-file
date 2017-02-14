@@ -1,0 +1,20 @@
+{
+
+  "manifest_version": 2,
+  "name": "Universal debug from log file",
+  "version": "1.0",
+
+  "description": "Addon read log file from the website server, parse it and show humanized results",
+
+  "icons": {
+    "48": "icons/bug-delete-48.png"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["jquery-3.1.1.min.js","universal-debug-from-log-file.js"]
+    }
+  ]
+
+}
