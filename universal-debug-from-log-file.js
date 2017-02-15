@@ -15,7 +15,7 @@
  */
 
 function readLogFile() {
-    console.log('test');
+    jQuery('body').prepend("<div id='uniDebugContainer'>yeah</div>")
 }
 
 jQuery(document).ready(function(){

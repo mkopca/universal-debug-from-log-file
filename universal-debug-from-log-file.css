@@ -1,0 +1,13 @@
+body {
+    margin-bottom: 48px !important;
+}
+#uniDebugContainer {
+    min-height: 48px;
+    background: url(icons/bug-48.png) no-repeat top right #fff;
+    border-top: 1px solid #ddd;
+    width: 100%;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    z-index: 2147483647; /* maximal value */
+}

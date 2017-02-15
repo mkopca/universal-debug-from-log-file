@@ -7,12 +7,13 @@
   "description": "Addon read log file from the website server, parse it and show humanized results",
 
   "icons": {
-    "48": "icons/bug-delete-48.png"
+    "48": "icons/bug-48.png"
   },
 
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
+      "css": ["universal-debug-from-log-file.css"],
       "js": ["jquery-3.1.1.min.js","universal-debug-from-log-file.js"]
     }
   ]
