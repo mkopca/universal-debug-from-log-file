@@ -14,10 +14,23 @@
  * since    2017-02-14
  */
 
-function readLogFile() {
-    jQuery('body').prepend("<div id='uniDebugContainer'>yeah</div>")
+function startDebug() {
+    jQuery('body').prepend("<div id='uniDebugContainer'>yeah</div>");
+}
+
+function endDebug() {
+    jQuery('#uniDebugContainer').remove();
 }
 
 jQuery(document).ready(function(){
-    readLogFile();
+    var domain = window.location.hostname;
+    var udflf = browser.storage.local.get("udflf");
+    if (udflf.length != 0) {
+        var domainSettings = udflf[domain];
+        if (domainSettings.length != 0) {
+            if (domainSettings.status == 1) {
+                startDebug();
+            }
+        }
+    }
 });

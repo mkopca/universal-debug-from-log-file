@@ -10,12 +10,25 @@
     "48": "icons/bug-48.png"
   },
 
+  "browser_action": {
+    "default_icon": {
+      "16": "icons/bug-off-16.png",
+      "32": "icons/bug-off-32.png"
+    }
+  },
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
       "css": ["universal-debug-from-log-file.css"],
       "js": ["jquery-3.1.1.min.js","universal-debug-from-log-file.js"]
     }
-  ]
+  ],
+
+  "permissions": ["storage"]
 
 }
