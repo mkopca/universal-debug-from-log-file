@@ -24,8 +24,15 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "css": ["universal-debug-from-log-file.css"],
-      "js": ["jquery-3.1.1.min.js","universal-debug-from-log-file.js"]
+      "css": [
+        "universal-debug-from-log-file.css",
+        "jquery-ui-1.12.1.custom/jquery-ui.css"
+      ],
+      "js": [
+        "jquery-3.1.1.min.js",
+        "jquery-ui-1.12.1.custom/jquery-ui.min.js",
+        "universal-debug-from-log-file.js"
+      ]
     }
   ],
 

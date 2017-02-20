@@ -2,12 +2,17 @@ body {
     margin-bottom: 48px !important;
 }
 #uniDebugContainer {
-    min-height: 48px;
+
+}
+#uniDebug {
     background: url(icons/bug-48.png) no-repeat top right #fff;
-    border-top: 1px solid #ddd;
+    border-top: 2px solid #ddd;
     width: 100%;
-    position: fixed;
+    position: fixed !important;
     bottom: 0;
     left: 0;
     z-index: 2147483647; /* maximal value */
+    /*transition: all 0.3s;*/
+    box-sizing: border-box;
+
 }
