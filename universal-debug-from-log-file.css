@@ -1,10 +1,4 @@
-body {
-    margin-bottom: 48px !important;
-}
 #uniDebugContainer {
-
-}
-#uniDebug {
     background: url(icons/bug-48.png) no-repeat top right #fff;
     border-top: 2px solid #ddd;
     width: 100%;

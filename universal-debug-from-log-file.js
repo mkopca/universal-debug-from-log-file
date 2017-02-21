@@ -14,12 +14,76 @@
  * since    2017-02-14
  */
 
-function getDebugElement(opened = false) {
-    var height = 0;
-    if (opened) {
-        height = 48;
+var defaultDebugerHeight = 50;
+
+function getDomainSettings(callback = null, param_1 = null, param_2 = null) {
+    var domain = window.location.hostname;
+    var storagePromise = browser.storage.local.get(domain);
+
+    storagePromise.then(function(result) {
+        var domainSettings = result[0];
+        console.log(domainSettings);
+        if (!jQuery.isEmptyObject(domainSettings)) {
+            domainSettings = domainSettings[domain];
+        } else {
+            console.log('setting doesn\'t exist, we must create them.');
+            // setting doesn't exist, we must create them.
+            domainSettings = {
+                status: 0,
+                height: defaultDebugerHeight
+            };
+            browser.storage.local.set({
+                [domain]: domainSettings
+            });
+        }
+        if (callback !== null) {
+            if (param_2 !== null) {
+                window[callback](true, domainSettings, param_1, param_2);
+            } else if (param_1 !== null) {
+                window[callback](true, domainSettings, param_1);
+            } else {
+                window[callback](true, domainSettings);
+            }
+        }
+    }, onError);
+}
+
+function setDomainSetting(callback = null, domainSettings = null, name = null, value = null) {
+    if (callback === null) {
+        getDomainSettings('setDomainSetting', name, value);
+    } else {
+        var domain = window.location.hostname;
+        domainSettings[name] = value;
+        browser.storage.local.set({
+            [domain]: domainSettings
+        });
     }
-    return "<div id='uniDebugContainer'><div id='uniDebug' style='height: " + height + "px;'>yeah</div></div>";
+}
+
+function getDebugElement(height = defaultDebugerHeight) {
+    jQuery('body').css({
+        marginBottom: height
+    });
+    return "<div id='uniDebugContainer' style='height: " + height + "px;'>yeah</div>";
+}
+
+function hookResizableEvent() {
+    jQuery('#uniDebugContainer').resizable({
+        handles: "n",
+        //grid: defaultDebugerHeight,
+        minHeight: defaultDebugerHeight,
+        maxHeight: jQuery(),
+        resize: function( event, ui ) {
+            jQuery('body').css({
+                marginBottom: ui.size.height
+            });
+            $(ui.originalElement).css('top', '');
+        },
+        stop: function( event, ui ) {
+            // save new height
+            setDomainSetting(null, null, 'height', ui.size.height);
+        }
+    });
 }
 
 /* generic error handler */
@@ -29,49 +93,31 @@ function onError(error) {
 
 function openDebug() {
     if (jQuery('#uniDebugContainer').length == 0) {
+        var domainSettings = getDomainSettings();
         jQuery('body').prepend(getDebugElement());
+        hookResizableEvent();
     }
-    jQuery('#uniDebug').css({height: 48});
 }
 
 function closeDebug() {
-    jQuery('#uniDebug').css({height: 0});
+    jQuery('#uniDebugContainer').remove();
+    jQuery('body').css({
+        marginBottom: ''
+    })
 }
 
-function toggleDebug() {
-    var domain = window.location.hostname;
-    var storagePromise = browser.storage.local.get(domain);
-    storagePromise.then(function(result) {
-        var domainSettings = result[0];
-        if (!jQuery.isEmptyObject(domainSettings)) {
-            domainSettings = domainSettings[domain];
-            if (domainSettings.status == 1) {
-                browser.storage.local.set({
-                    [domain]: {
-                        status: 0
-                    }
-                });
-                closeDebug();
-            } else {
-                browser.storage.local.set({
-                    [domain]: {
-                        status: 1
-                    }
-                });
-                openDebug();
-            }
+function toggleDebug(callback = true, domainSettings = null) {
+    if (callback === null) {
+        getDomainSettings('toggleDebug');
+    } else {
+        if (domainSettings.status == 1) {
+            setDomainSetting(null, null, 'status', 0);
+            closeDebug();
         } else {
-            console.log('setting doesn\'t exist, we must create them.');
-            // setting doesn't exist, we must create them.
-            browser.storage.local.set({
-                [domain]: {
-                    status: 1
-                }
-            });
+            setDomainSetting(null, null, 'status', 1);
             openDebug();
         }
-    }, onError);
-
+    }
 }
 
 function displayAllStorageSettings() {
@@ -121,12 +167,6 @@ browser.runtime.onMessage.addListener(performRequestFromBackgroundScript);
 jQuery(document).ready(function(){
     console.log('document ready');
 
-    browser.storage.local.set({
-        test: {
-            status: 1
-        }
-    });
-
     // clearAllStorageSettings();
     // displayAllStorageSettings();
 
@@ -137,26 +177,13 @@ jQuery(document).ready(function(){
         if (!jQuery.isEmptyObject(domainSettings)) {
             domainSettings = domainSettings[domain];
             if (domainSettings.status == 1) {
-                jQuery('body').prepend(getDebugElement(true));
-            } else {
-                jQuery('body').prepend(getDebugElement());
+                jQuery('body').prepend(getDebugElement(domainSettings.height));
+                console.log(domainSettings);
             }
         } else {
-            jQuery('body').prepend(getDebugElement());
             console.log('setting doesn\'t exist, but we can\'t create them. It must be made after toggle button click');
         }
     }, onError).then(function() {
-        jQuery('#uniDebug').resizable({
-            handles: "n",
-            containment: "body",
-            resize: function( event, ui ) {
-                ui.position.top = null;
-            }
-            // stop: function( event, ui ) {
-            //
-            // }
-            // minHeight: 50,
-            // ghost: true
-        });
+        hookResizableEvent();
     });
 });
