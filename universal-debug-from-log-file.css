@@ -8,5 +8,14 @@
     z-index: 2147483647; /* maximal value */
     /*transition: all 0.3s;*/
     box-sizing: border-box;
-
+    padding: 10px 60px 10px 10px;
+    font-size: 12px;
+    color: #000;
+}
+#uniDebugContainer .error {
+    color: darkred;
+}
+#uniDebugContainer .result {
+    overflow-y: scroll;
+    height: 100%;
 }

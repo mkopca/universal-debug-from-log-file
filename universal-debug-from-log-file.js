@@ -16,55 +16,28 @@
 
 var defaultDebugerHeight = 50;
 
-function getDomainSettings(callback = null, param_1 = null, param_2 = null) {
-    var domain = window.location.hostname;
-    var storagePromise = browser.storage.local.get(domain);
-
-    storagePromise.then(function(result) {
-        var domainSettings = result[0];
-        console.log(domainSettings);
-        if (!jQuery.isEmptyObject(domainSettings)) {
-            domainSettings = domainSettings[domain];
-        } else {
-            console.log('setting doesn\'t exist, we must create them.');
-            // setting doesn't exist, we must create them.
-            domainSettings = {
-                status: 0,
-                height: defaultDebugerHeight
-            };
-            browser.storage.local.set({
-                [domain]: domainSettings
-            });
-        }
-        if (callback !== null) {
-            if (param_2 !== null) {
-                window[callback](true, domainSettings, param_1, param_2);
-            } else if (param_1 !== null) {
-                window[callback](true, domainSettings, param_1);
-            } else {
-                window[callback](true, domainSettings);
-            }
-        }
-    }, onError);
+var Udflf = {
+    initialized: false,
+    settings: {
+        status: 0,
+        height: defaultDebugerHeight,
+        logUrl: '/tmp/logs/debug.log'
+    }
 }
 
-function setDomainSetting(callback = null, domainSettings = null, name = null, value = null) {
-    if (callback === null) {
-        getDomainSettings('setDomainSetting', name, value);
-    } else {
-        var domain = window.location.hostname;
-        domainSettings[name] = value;
-        browser.storage.local.set({
-            [domain]: domainSettings
-        });
-    }
+function saveSetting(name = null, value = null) {
+    var domain = window.location.hostname;
+    Udflf.settings[name] = value;
+    browser.storage.local.set({
+        [domain]: Udflf.settings
+    });
 }
 
 function getDebugElement(height = defaultDebugerHeight) {
     jQuery('body').css({
-        marginBottom: height
+        marginBottom: Udflf.settings.height
     });
-    return "<div id='uniDebugContainer' style='height: " + height + "px;'>yeah</div>";
+    return "<div id='uniDebugContainer' style='height: " + Udflf.settings.height + "px;'></div>";
 }
 
 function hookResizableEvent() {
@@ -72,7 +45,6 @@ function hookResizableEvent() {
         handles: "n",
         //grid: defaultDebugerHeight,
         minHeight: defaultDebugerHeight,
-        maxHeight: jQuery(),
         resize: function( event, ui ) {
             jQuery('body').css({
                 marginBottom: ui.size.height
@@ -81,7 +53,7 @@ function hookResizableEvent() {
         },
         stop: function( event, ui ) {
             // save new height
-            setDomainSetting(null, null, 'height', ui.size.height);
+            saveSetting('height', ui.size.height);
         }
     });
 }
@@ -91,11 +63,27 @@ function onError(error) {
     console.log(error);
 }
 
+function absUrl(url) {
+    console.log(location.protocol + '//' + window.location.hostname + url);
+    return location.protocol + '//' + window.location.hostname + url;
+}
+
 function openDebug() {
     if (jQuery('#uniDebugContainer').length == 0) {
-        var domainSettings = getDomainSettings();
         jQuery('body').prepend(getDebugElement());
-        hookResizableEvent();
+        // hookResizableEvent();
+        // load content of log file
+        jQuery.ajax({
+            url: absUrl(Udflf.settings.logUrl),
+            error: function(x, e, t) {
+                jQuery('#uniDebugContainer').html('<div class="error">' + e + ': ' + (t.message ? t.message : t) + '</div>');
+            }
+        })
+        .done(function(data) {
+            // parse data
+            data = data.split('>> ');
+            jQuery('#uniDebugContainer').html('<div class="result">' + data[data.length - 1] + '</div>');
+        });
     }
 }
 
@@ -106,15 +94,30 @@ function closeDebug() {
     })
 }
 
-function toggleDebug(callback = true, domainSettings = null) {
-    if (callback === null) {
-        getDomainSettings('toggleDebug');
+function toggleDebug() {
+    if (Udflf.initialized === false) {
+        var domain = window.location.hostname;
+        var storagePromise = browser.storage.local.get(domain);
+        storagePromise.then(function(result) {
+            var domainSettings = result[0];
+            if (!jQuery.isEmptyObject(domainSettings)) {
+                Udflf.settings = domainSettings[domain];
+                Udflf.initialized = true;
+                if (Udflf.settings.status == 1) {
+                    saveSetting('status', 0);
+                    closeDebug();
+                } else {
+                    saveSetting('status', 1);
+                    openDebug();
+                }
+            }
+        });
     } else {
-        if (domainSettings.status == 1) {
-            setDomainSetting(null, null, 'status', 0);
+        if (Udflf.settings.status == 1) {
+            saveSetting('status', 0);
             closeDebug();
         } else {
-            setDomainSetting(null, null, 'status', 1);
+            saveSetting('status', 1);
             openDebug();
         }
     }
@@ -162,6 +165,10 @@ function performRequestFromBackgroundScript(request, sender, sendResponse) {
         }
     }
 }
+
+
+
+
 browser.runtime.onMessage.addListener(performRequestFromBackgroundScript);
 
 jQuery(document).ready(function(){
@@ -175,10 +182,10 @@ jQuery(document).ready(function(){
     storagePromise.then(function(result) {
         var domainSettings = result[0];
         if (!jQuery.isEmptyObject(domainSettings)) {
-            domainSettings = domainSettings[domain];
-            if (domainSettings.status == 1) {
-                jQuery('body').prepend(getDebugElement(domainSettings.height));
-                console.log(domainSettings);
+            Object.assign(Udflf.settings, domainSettings[domain]);
+            Udflf.initialized = true;
+            if (Udflf.settings.status == 1) {
+                openDebug();
             }
         } else {
             console.log('setting doesn\'t exist, but we can\'t create them. It must be made after toggle button click');
