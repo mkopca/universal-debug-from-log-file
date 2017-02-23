@@ -1,4 +1,5 @@
 #uniDebugContainer {
+    font-family: Arial;
     background: url(icons/bug-48.png) no-repeat top right #fff;
     border-top: 2px solid #ddd;
     width: 100%;
@@ -16,6 +17,53 @@
     color: darkred;
 }
 #uniDebugContainer .result {
-    overflow-y: scroll;
+    overflow-y: auto;
     height: 100%;
+}
+#uniDebugContainer .result .block {
+    line-height: 18px;
+    padding: 2px 0;
+    margin: 0;
+}
+#uniDebugContainer .result .block .head {
+    font-weight: bold;
+}
+#uniDebugContainer .result .block .head .subtitle {
+    font-weight: normal;
+    color: #333;
+}
+#uniDebugContainer .result .block .toggle {
+    cursor: pointer;
+}
+#uniDebugContainer .result .block .togButton {
+    border: 1px solid #777;
+    height: 12px;
+    line-height: 12px;
+    width: 12px;
+    display: inline-block;
+    color: #777;
+    font-size: 14px;
+    text-align: center;
+    margin-right: 6px;
+}
+#uniDebugContainer .result .block .lines {
+
+}
+#uniDebugContainer .result .block .line {
+    color: #000;
+    font-family: Arial;
+    font-weight: normal;
+    border-bottom: 1px solid #ccc;
+    padding: 2px 0 2px 10px;
+    margin: 0;
+}
+#uniDebugContainer .result .block .line:first-child {
+    padding-top: 6px;
+}
+
+#uniDebugContainer .red {
+    color: darkred;
+}
+#uniDebugContainer .orange {
+    color: orangered;
 }

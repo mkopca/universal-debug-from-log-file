@@ -21,7 +21,11 @@ var Udflf = {
     settings: {
         status: 0,
         height: defaultDebugerHeight,
-        logUrl: '/tmp/logs/debug.log'
+        logUrl: '/tmp/logs/debug.log',
+        cleanLogsUrl: '/mvc/App/Tools/cleanDebugLogFile',
+        keepOldRecordsInLogs: 0,
+        logRecordsSeparator: '>> ',
+        logsAreExpanded: false
     }
 }
 
@@ -37,7 +41,7 @@ function getDebugElement(height = defaultDebugerHeight) {
     jQuery('body').css({
         marginBottom: Udflf.settings.height
     });
-    return "<div id='uniDebugContainer' style='height: " + Udflf.settings.height + "px;'></div>";
+    return "<div id='uniDebugScope'><div id='uniDebugContainer' style='height: " + Udflf.settings.height + "px;'></div></div>";
 }
 
 function hookResizableEvent() {
@@ -49,11 +53,23 @@ function hookResizableEvent() {
             jQuery('body').css({
                 marginBottom: ui.size.height
             });
-            $(ui.originalElement).css('top', '');
+            jQuery(ui.originalElement).css('top', '');
         },
         stop: function( event, ui ) {
             // save new height
             saveSetting('height', ui.size.height);
+        }
+    });
+}
+
+function hookDebugResultEvents() {
+    jQuery('.block .toggle').click(function() {
+        if (jQuery(this).siblings('.lines').is(":visible")) {
+            jQuery(this).siblings('.lines').hide();
+            jQuery(this).children('.togButton').html('+');
+        } else {
+            jQuery(this).siblings('.lines').show();
+            jQuery(this).children('.togButton').html('-');
         }
     });
 }
@@ -70,19 +86,59 @@ function absUrl(url) {
 
 function openDebug() {
     if (jQuery('#uniDebugContainer').length == 0) {
-        jQuery('body').prepend(getDebugElement());
-        // hookResizableEvent();
+        jQuery('body').prepend(getDebugElement);
         // load content of log file
         jQuery.ajax({
-            url: absUrl(Udflf.settings.logUrl),
+            url: absUrl(Udflf.settings.logUrl) + '?_=' + new Date().getTime(),
             error: function(x, e, t) {
                 jQuery('#uniDebugContainer').html('<div class="error">' + e + ': ' + (t.message ? t.message : t) + '</div>');
             }
         })
         .done(function(data) {
+            var output = '';
             // parse data
-            data = data.split('>> ');
-            jQuery('#uniDebugContainer').html('<div class="result">' + data[data.length - 1] + '</div>');
+            var logs = data.split(Udflf.settings.logRecordsSeparator);
+            // output += '<div class="head">' + logs[0] + '</div>';
+            for (var x = 1; x < logs.length; x++) {
+                var logLines = logs[x].split(/\r\n|\n|\r/g);
+                output += '<div class="block">';
+
+                var head = logLines[1];
+                while (head.substr(0, 1) == '[' || head.substr(0, 1) == ' ' || head.substr(0, 1) == '-') {
+                    head = head.substr(1);
+                }
+                head = head.split(']');
+                if (head[1]) {
+                    head = head[0] + '<span class="subtitle">' + head[1] + '</span>';
+                }
+
+                var headClass = '';
+                if (head.indexOf('ERROR') >= 0 || head.indexOf('EXCEPTION') >= 0) {
+                    headClass = 'red';
+                }
+                if (head.indexOf('WARNING') >= 0) {
+                    headClass = 'orange';
+                }
+
+                output += '<div class="toggle">';
+                if (Udflf.settings.logsAreExpanded) {
+                    output += '<div class="togButton">-</div><span class="head ' + headClass + '">' + head + '</span></div><div class="lines" style="display: block;">';
+                } else {
+                    output += '<div class="togButton">+</div><span class="head ' + headClass + '">' + head + '</span></div><div class="lines" style="display: none;">';
+                }
+                for (var y = 2; y < logLines.length; y++) {
+                    if (logLines[y].replace(/\s|\r\n|\n|\r/g, "") == "") continue;
+                    output += '<pre class="line">' + logLines[y] + '</pre>';
+                }
+                output += '</div></div>';
+            }
+            jQuery('#uniDebugContainer').html('<div class="result">' + output + '</div>');
+            hookDebugResultEvents();
+            hookResizableEvent();
+            // clear old log records
+            jQuery.ajax({
+                url: absUrl(Udflf.settings.cleanLogsUrl + '/' + Udflf.settings.keepOldRecordsInLogs + '/' + Udflf.settings.logRecordsSeparator)
+            });
         });
     }
 }
@@ -101,7 +157,7 @@ function toggleDebug() {
         storagePromise.then(function(result) {
             var domainSettings = result[0];
             if (!jQuery.isEmptyObject(domainSettings)) {
-                Udflf.settings = domainSettings[domain];
+                Object.assign(Udflf.settings, domainSettings[domain]);
                 Udflf.initialized = true;
                 if (Udflf.settings.status == 1) {
                     saveSetting('status', 0);
@@ -110,6 +166,13 @@ function toggleDebug() {
                     saveSetting('status', 1);
                     openDebug();
                 }
+            } else {
+                Udflf.initialized = true;
+                Udflf.settings.status = 1;
+                browser.storage.local.set({
+                    [domain]: Udflf.settings
+                });
+                openDebug();
             }
         });
     } else {
@@ -191,6 +254,6 @@ jQuery(document).ready(function(){
             console.log('setting doesn\'t exist, but we can\'t create them. It must be made after toggle button click');
         }
     }, onError).then(function() {
-        hookResizableEvent();
+
     });
 });
