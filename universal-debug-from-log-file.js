@@ -21,8 +21,10 @@ var Udflf = {
     settings: {
         status: 0,
         height: defaultDebugerHeight,
-        logUrl: '/tmp/logs/debug.log',
-        cleanLogsUrl: '/mvc/App/Tools/cleanDebugLogFile',
+        // logUrl: '/tmp/logs/debug.log',
+        logUrl: '/logs/debug.log',
+        // cleanLogsUrl: '/mvc/App/Tools/cleanDebugLogFile',
+        cleanLogsUrl: '/logs/cleanDebugLogFile.php',
         keepOldRecordsInLogs: 0,
         logRecordsSeparator: '>> ',
         logsAreExpanded: false
@@ -100,6 +102,9 @@ function openDebug() {
             var logs = data.split(Udflf.settings.logRecordsSeparator);
             // output += '<div class="head">' + logs[0] + '</div>';
             for (var x = 1; x < logs.length; x++) {
+                if (logs[x].trim() == '') {
+                    continue;
+                }
                 var logLines = logs[x].split(/\r\n|\n|\r/g);
                 output += '<div class="block">';
 
@@ -137,7 +142,7 @@ function openDebug() {
             hookResizableEvent();
             // clear old log records
             jQuery.ajax({
-                url: absUrl(Udflf.settings.cleanLogsUrl + '/' + Udflf.settings.keepOldRecordsInLogs + '/' + Udflf.settings.logRecordsSeparator)
+                url: absUrl(Udflf.settings.cleanLogsUrl + '?keepOldRecordsInLogs=' + Udflf.settings.keepOldRecordsInLogs + '&logRecordsSeparator=' + Udflf.settings.logRecordsSeparator)
             });
         });
     }
